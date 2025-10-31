@@ -308,7 +308,8 @@ function parseCSV(text) {
   var batteryIdx = headers.indexOf('batería');
   if (batteryIdx < 0) batteryIdx = headers.indexOf('bateria');
   var priceIdx = headers.indexOf('precio');
-  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+  // Al cargar un CSV se reemplaza completamente el inventario actual.
+  var inventory = [];
   for (var i = 1; i < lines.length; i++) {
     var row = lines[i];
     if (!row) continue;
@@ -326,6 +327,8 @@ function parseCSV(text) {
     inventory.push({ model: model, color: color, battery: battery, price: isNaN(price) ? 0 : price });
   }
   localStorage.setItem('inventory', JSON.stringify(inventory));
+  // Reiniciar la selección de fila y recargar tabla
+  selectedRowIndex = null;
   loadInventory();
 }
 
