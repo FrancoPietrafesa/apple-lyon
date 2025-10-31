@@ -3,30 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <title>Apple Lyon - Inventario</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { font-family: Arial, sans-serif; background-color: #121212; color:#fff; position: relative; }
-body::before { content:''; position:fixed; top:0; left:0; width:100%; height:100%; background-image: url('watermark.png'); background-size:contain; background-position:center; background-repeat:no-repeat; opacity:0.05; pointer-events:none; z-index:-1; }
-header { background-color: #1e1e1e; padding: 10px; display: flex; justify-content: center; align-items: center; }
-header h1 { margin: 0; font-size: 24px; margin-right:auto; }
-header nav { display:flex; justify-content:center; width:100%; }
-header nav a { color: #6264A7; margin: 0 10px; text-decoration: none; padding: 8px 12px; border: 2px solid #6264A7; border-radius:4px; background-color:#1e1e1e; }
-header nav a:hover { background-color:#2c2c2c; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-th, td { padding: 8px 12px; border: 1px solid #444; text-align: left; }
-thead { background-color: #1f1f1f; }
+* { box-sizing: border-box; }
+body {
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    color: #fff;
+    margin: 0;
+    min-height: 100vh;
+    position: relative;
+}
+/* Watermark background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('watermark.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: -1;
+}
+header {
+    background-color: #1e1e1e;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+nav {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+nav a {
+    color: #6264A7;
+    text-decoration: none;
+    padding: 8px 12px;
+    border: 2px solid #6264A7;
+    border-radius: 4px;
+    background-color: #1e1e1e;
+    display: inline-block;
+}
+nav a:hover {
+    background-color: #2c2c2c;
+}
+#controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+}
+#controls button {
+    padding: 8px 12px;
+    background-color: #000;
+    color: #fff;
+    border: 2px solid #6264A7;
+    border-radius: 4px;
+    cursor: pointer;
+}
+#controls button:hover {
+    background-color: #111;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    display: block;
+    overflow-x: auto;
+}
+thead {
+    background-color: #1f1f1f;
+}
+th, td {
+    padding: 8px 12px;
+    border: 1px solid #444;
+    text-align: left;
+    white-space: nowrap;
+}
 tbody tr:nth-child(even) { background-color: #1b1b1b; }
 tbody tr:nth-child(odd) { background-color: #161616; }
 tr.selected { background-color: #333333 !important; }
-button { margin: 5px; padding: 8px 12px; background-color:#000; color:#fff; border: 2px solid #6264A7; border-radius:4px; cursor:pointer; }
-button:hover { background-color:#111; }
-#controls { margin-top: 10px; margin-bottom: 10px; display:flex; gap:10px; }
+/* Responsive tweaks */
+@media (max-width: 600px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    nav {
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 10px;
+    }
+    nav a {
+        margin: 2px 0;
+        flex: 1 0 auto;
+        text-align: center;
+    }
+    #controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #controls button {
+        width: 100%;
+    }
+    table {
+        font-size: 14px;
+    }
+}
 </style>
 </head>
 <body>
 <header>
   <h1>Apple Lyon - Inventario</h1>
   <nav>
-    <a href="charts.html">Graficos</a>
+    <a href="charts.html">Gráficos</a>
     <a href="#" onclick="logout()">Cerrar sesión</a>
   </nav>
 </header>
@@ -41,7 +143,7 @@ button:hover { background-color:#111; }
       <tr>
         <th>MODELO</th>
         <th>COLOR</th>
-        <th>BATERIA</th>
+        <th>BATERÍA</th>
         <th>PRECIO</th>
       </tr>
     </thead>
@@ -50,6 +152,7 @@ button:hover { background-color:#111; }
   </table>
 </div>
 <script>
+// Redirigir si no está logueado
 if (localStorage.getItem('loggedIn') !== 'true') {
   location.href = 'index.html';
 }
@@ -60,12 +163,15 @@ function loadInventory() {
   var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
   var tbody = document.querySelector('#inventoryTable tbody');
   tbody.innerHTML = '';
-  inventory.forEach((item, index) => {
+  inventory.forEach(function(item, index) {
     var tr = document.createElement('tr');
     tr.addEventListener('click', function() {
       selectRow(index);
     });
-    tr.innerHTML = '<td>'+item.model+'</td><td>'+item.color+'</td><td>'+item.battery+'</td><td>'+item.price.toFixed(2)+'</td>';
+    tr.innerHTML = '<td>' + item.model + '</td>' +
+                  '<td>' + item.color + '</td>' +
+                  '<td>' + item.battery + '</td>' +
+                  '<td>' + item.price.toFixed(2) + '</td>';
     tbody.appendChild(tr);
   });
 }
@@ -73,7 +179,7 @@ function loadInventory() {
 function selectRow(index) {
   selectedRowIndex = index;
   var rows = document.querySelectorAll('#inventoryTable tbody tr');
-  rows.forEach((row, i) => {
+  rows.forEach(function(row, i) {
     row.className = (i === index) ? 'selected' : '';
   });
 }
@@ -88,7 +194,7 @@ function addItem() {
   var price = parseFloat(prompt('Precio (USD):'));
   if (isNaN(price)) return;
   var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-  inventory.push({model:model, color:color, battery:battery, price:price});
+  inventory.push({model: model, color: color, battery: battery, price: price});
   localStorage.setItem('inventory', JSON.stringify(inventory));
   loadInventory();
 }
@@ -108,7 +214,7 @@ function editItem() {
   if (!battery) return;
   var price = parseFloat(prompt('Precio (USD):', item.price));
   if (isNaN(price)) return;
-  inventory[selectedRowIndex] = {model:model, color:color, battery:battery, price:price};
+  inventory[selectedRowIndex] = {model: model, color: color, battery: battery, price: price};
   localStorage.setItem('inventory', JSON.stringify(inventory));
   loadInventory();
 }
