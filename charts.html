@@ -5,9 +5,11 @@
 <title>Apple Lyon - Graficos</title>
 <style>
 body { font-family: Arial, sans-serif; background-color: #121212; color:#fff; }
-header { background-color: #1e1e1e; padding: 10px; display:flex; justify-content: space-between; align-items:center; color:#fff; }
-header h1 { margin: 0; font-size: 24px; }
-header nav a { color: #66bfff; margin-left: 15px; text-decoration: none; }
+header { background-color: #1e1e1e; padding: 10px; display:flex; justify-content: center; align-items:center; color:#fff; }
+header h1 { margin: 0; font-size: 24px; margin-right:auto; }
+header nav { display:flex; justify-content:center; width:100%; }
+header nav a { color: #66bfff; margin: 0 10px; text-decoration: none; padding: 8px 12px; border: 2px solid #66bfff; border-radius:4px; background-color:#1e1e1e; }
+header nav a:hover { background-color:#2c2c2c; }
 .container { padding: 20px; }
 canvas { margin-top: 20px; background-color:#1e1e1e; border-radius:8px; box-shadow:0 0 5px rgba(255,255,255,0.1); }
 </style>
@@ -33,23 +35,32 @@ if (localStorage.getItem('loggedIn') !== 'true') {
 
 function generateCharts() {
   var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+  // counts per model
   var modelCounts = {};
+  var priceByModel = {};
   inventory.forEach(item => {
     modelCounts[item.model] = (modelCounts[item.model] || 0) + 1;
+    priceByModel[item.model] = (priceByModel[item.model] || 0) + item.price;
   });
   var modelLabels = Object.keys(modelCounts);
   var countData = Object.values(modelCounts);
 
+  // generate colors for models
+  var colors = modelLabels.map((label, index) => {
+    var hue = Math.floor((index / modelLabels.length) * 360);
+    return `hsl(${hue}, 70%, 50%)`;
+  });
+
   var ctx1 = document.getElementById('modelChart').getContext('2d');
   new Chart(ctx1, {
-    type: 'bar',
+    type: 'pie',
     data: {
       labels: modelLabels,
       datasets: [{
         label: 'Cantidad',
         data: countData,
-        backgroundColor: 'rgba(102, 191, 255, 0.6)',
-        borderColor: '#66bfff',
+        backgroundColor: colors,
+        borderColor: '#121212',
         borderWidth: 1
       }]
     },
@@ -57,32 +68,29 @@ function generateCharts() {
       plugins: {
         legend: {
           labels: { color: 'white' }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: 'white' },
-          grid: { color: 'rgba(255,255,255,0.1)' }
-        },
-        y: {
-          ticks: { color: 'white' },
-          grid: { color: 'rgba(255,255,255,0.1)' }
         }
       }
     }
   });
 
-  var totalPrice = inventory.reduce((sum, item) => sum + item.price, 0);
+  // price by model chart
+  var priceLabels = Object.keys(priceByModel);
+  var priceData = Object.values(priceByModel);
+  var priceColors = priceLabels.map((label, index) => {
+    var hue = Math.floor((index / priceLabels.length) * 360);
+    return `hsl(${hue}, 70%, 50%)`;
+  });
+
   var ctx2 = document.getElementById('priceChart').getContext('2d');
   new Chart(ctx2, {
-    type: 'bar',
+    type: 'pie',
     data: {
-      labels: ['Precio total'],
+      labels: priceLabels,
       datasets: [{
-        label: 'Precio (USD)',
-        data: [totalPrice],
-        backgroundColor: 'rgba(102, 191, 255, 0.6)',
-        borderColor: '#66bfff',
+        label: 'Precio por modelo (USD)',
+        data: priceData,
+        backgroundColor: priceColors,
+        borderColor: '#121212',
         borderWidth: 1
       }]
     },
@@ -90,16 +98,6 @@ function generateCharts() {
       plugins: {
         legend: {
           labels: { color: 'white' }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: 'white' },
-          grid: { color: 'rgba(255,255,255,0.1)' }
-        },
-        y: {
-          ticks: { color: 'white' },
-          grid: { color: 'rgba(255,255,255,0.1)' }
         }
       }
     }
