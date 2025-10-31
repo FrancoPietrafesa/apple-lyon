@@ -34,47 +34,47 @@ button:hover { background-color:#555; }
 <div id="message"></div>
 </div>
 <script>
-function toggleForms() {{
+function toggleForms() {
   var loginForm = document.getElementById('loginForm');
   var registerForm = document.getElementById('registerForm');
-  if (loginForm.style.display === 'none') {{
+  if (loginForm.style.display === 'none') {
     loginForm.style.display = '';
     registerForm.style.display = 'none';
-  }} else {{
+  } else {
     loginForm.style.display = 'none';
     registerForm.style.display = '';
-  }}
-}}
-function register() {{
+  }
+}
+function register() {
   var email = document.getElementById('regEmail').value.trim();
   var password = document.getElementById('regPassword').value.trim();
-  if (!email || !password) {{
+  if (!email || !password) {
     alert('Completa todos los campos');
     return;
-  }}
+  }
   var users = JSON.parse(localStorage.getItem('users') || '[]');
   var exists = users.find(u => u.email === email);
-  if (exists) {{
+  if (exists) {
     alert('El usuario ya existe');
     return;
-  }}
+  }
   users.push({email: email, password: password});
   localStorage.setItem('users', JSON.stringify(users));
   alert('Registro exitoso, ahora puedes ingresar');
   toggleForms();
-}}
-function login() {{
+}
+function login() {
   var email = document.getElementById('loginEmail').value.trim();
   var password = document.getElementById('loginPassword').value.trim();
   var users = JSON.parse(localStorage.getItem('users') || '[]');
   var user = users.find(u => u.email === email && u.password === password);
-  if (!user) {{
+  if (!user) {
     alert('Credenciales incorrectas');
     return;
-  }}
+  }
   localStorage.setItem('loggedIn', 'true');
   location.href = 'landing.html';
-}}
+}
 </script>
 </body>
 </html>
