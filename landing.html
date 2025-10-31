@@ -163,6 +163,8 @@ tr.selected { background-color: #333333 !important; }
     <button onclick="addItem()">Agregar</button>
     <button onclick="editItem()">Editar</button>
     <button onclick="deleteItem()">Borrar</button>
+    <button onclick="loadCSV()">Cargar CSV</button>
+    <button onclick="downloadCSV()">Descargar CSV</button>
   </div>
   <div class="table-container">
     <table id="inventoryTable">
@@ -178,6 +180,8 @@ tr.selected { background-color: #333333 !important; }
       </tbody>
     </table>
   </div>
+  <!-- Hidden input for CSV upload -->
+  <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
 </div>
 <script>
 // Redirigir si no está logueado
@@ -262,6 +266,88 @@ function deleteItem() {
 function logout() {
   localStorage.setItem('loggedIn', 'false');
   location.href = 'index.html';
+}
+
+// Trigger file selection for CSV upload
+function loadCSV() {
+  var input = document.getElementById('csvFileInput');
+  if (input) {
+    input.value = '';
+    input.click();
+  }
+}
+
+// Listen for file selection and parse CSV
+var csvInput = document.getElementById('csvFileInput');
+if (csvInput) {
+  csvInput.addEventListener('change', function(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var text = e.target.result;
+      parseCSV(text);
+    };
+    reader.readAsText(file);
+  });
+}
+
+// Parse CSV text and add entries to inventory
+function parseCSV(text) {
+  if (!text) return;
+  var lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return;
+  var delimiter = ',';
+  // Detect delimiter based on first line (comma or semicolon)
+  if (lines[0].indexOf(';') > -1 && lines[0].indexOf(',') === -1) {
+    delimiter = ';';
+  }
+  var headers = lines[0].split(delimiter).map(function(h) { return h.trim().toLowerCase(); });
+  var modelIdx = headers.indexOf('modelo');
+  var colorIdx = headers.indexOf('color');
+  var batteryIdx = headers.indexOf('batería');
+  if (batteryIdx < 0) batteryIdx = headers.indexOf('bateria');
+  var priceIdx = headers.indexOf('precio');
+  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+  for (var i = 1; i < lines.length; i++) {
+    var row = lines[i];
+    if (!row) continue;
+    var parts = row.split(delimiter);
+    // Skip if row doesn't match header length
+    if (parts.length < headers.length) continue;
+    var model = modelIdx >= 0 ? parts[modelIdx].trim() : '';
+    if (!model) continue;
+    var color = colorIdx >= 0 ? parts[colorIdx].trim() : '';
+    var battery = batteryIdx >= 0 ? parts[batteryIdx].trim() : '';
+    var priceStr = priceIdx >= 0 ? parts[priceIdx].trim() : '';
+    // Replace comma decimal with dot
+    priceStr = priceStr.replace(/,/g, '.');
+    var price = parseFloat(priceStr);
+    inventory.push({ model: model, color: color, battery: battery, price: isNaN(price) ? 0 : price });
+  }
+  localStorage.setItem('inventory', JSON.stringify(inventory));
+  loadInventory();
+}
+
+// Generate and download CSV from current inventory
+function downloadCSV() {
+  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+  var lines = [];
+  lines.push('MODELO,COLOR,BATERÍA,PRECIO');
+  inventory.forEach(function(item) {
+    var priceVal = (typeof item.price === 'number') ? item.price.toString() : item.price;
+    lines.push([item.model, item.color, item.battery, priceVal].join(','));
+  });
+  var csvContent = lines.join('\n');
+  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'inventario.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 window.onload = loadInventory;
