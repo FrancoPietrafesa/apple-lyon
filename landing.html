@@ -42,13 +42,16 @@ header h1 {
     margin: 0;
     font-size: 24px;
 }
-nav {
+/* Container for title and Graficos button */
+header .left {
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 10px;
+    flex-direction: column;
+    align-items: center;
 }
-nav a {
+header .left h1 {
+    margin-bottom: 4px;
+}
+header .nav-btn {
     color: #6264A7;
     text-decoration: none;
     padding: 8px 12px;
@@ -57,13 +60,28 @@ nav a {
     background-color: #1e1e1e;
     display: inline-block;
 }
-nav a:hover {
+header .nav-btn:hover {
+    background-color: #2c2c2c;
+}
+/* Style for logout button on the right */
+header .logout-btn {
+    color: #6264A7;
+    text-decoration: none;
+    padding: 8px 12px;
+    border: 2px solid #6264A7;
+    border-radius: 4px;
+    background-color: #1e1e1e;
+    display: inline-block;
+    margin-left: auto;
+}
+header .logout-btn:hover {
     background-color: #2c2c2c;
 }
 #controls {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    justify-content: center;
     margin: 10px 0;
 }
 #controls button {
@@ -82,6 +100,8 @@ table {
     border-collapse: collapse;
     display: block;
     overflow-x: auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 thead {
     background-color: #1f1f1f;
@@ -99,17 +119,14 @@ tr.selected { background-color: #333333 !important; }
 @media (max-width: 600px) {
     header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
     }
-    nav {
-        width: 100%;
-        justify-content: flex-start;
+    header .left {
+        align-items: center;
+    }
+    header .logout-btn {
         margin-top: 10px;
-    }
-    nav a {
-        margin: 2px 0;
-        flex: 1 0 auto;
-        text-align: center;
+        margin-left: 0;
     }
     #controls {
         flex-direction: column;
@@ -126,13 +143,13 @@ tr.selected { background-color: #333333 !important; }
 </head>
 <body>
 <header>
-  <h1>Apple Lyon - Inventario</h1>
-  <nav>
-    <a href="charts.html">Gráficos</a>
-    <a href="#" onclick="logout()">Cerrar sesión</a>
-  </nav>
+  <div class="left">
+    <h1>Apple Lyon - Inventario</h1>
+    <a href="charts.html" class="nav-btn">Gráficos</a>
+  </div>
+  <a href="#" onclick="logout()" class="logout-btn">Cerrar sesión</a>
 </header>
-<div style="padding: 20px;">
+<div class="content-container" style="padding: 20px; text-align: center; width: 100%; max-width: 1000px; margin: 0 auto;">
   <div id="controls">
     <button onclick="addItem()">Agregar</button>
     <button onclick="editItem()">Editar</button>
