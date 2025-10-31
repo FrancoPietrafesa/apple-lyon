@@ -34,8 +34,9 @@ header {
     background-color: #1e1e1e;
     padding: 10px;
     display: flex;
+    justify-content: center;
     align-items: center;
-    justify-content: space-between;
+    position: relative;
     flex-wrap: wrap;
 }
 header h1 {
@@ -72,7 +73,10 @@ header .logout-btn {
     border-radius: 4px;
     background-color: #1e1e1e;
     display: inline-block;
-    margin-left: auto;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 header .logout-btn:hover {
     background-color: #2c2c2c;
@@ -96,10 +100,8 @@ header .logout-btn:hover {
     background-color: #111;
 }
 table {
-    width: 100%;
+    width: auto;
     border-collapse: collapse;
-    display: block;
-    overflow-x: auto;
     margin-left: auto;
     margin-right: auto;
 }
@@ -139,6 +141,13 @@ tr.selected { background-color: #333333 !important; }
         font-size: 14px;
     }
 }
+
+/* Wrapper to allow horizontal scroll on small screens */
+.table-container {
+    overflow-x: auto;
+    margin-left: auto;
+    margin-right: auto;
+}
 </style>
 </head>
 <body>
@@ -155,18 +164,20 @@ tr.selected { background-color: #333333 !important; }
     <button onclick="editItem()">Editar</button>
     <button onclick="deleteItem()">Borrar</button>
   </div>
-  <table id="inventoryTable">
-    <thead>
-      <tr>
-        <th>MODELO</th>
-        <th>COLOR</th>
-        <th>BATERÍA</th>
-        <th>PRECIO</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
+  <div class="table-container">
+    <table id="inventoryTable">
+      <thead>
+        <tr>
+          <th>MODELO</th>
+          <th>COLOR</th>
+          <th>BATERÍA</th>
+          <th>PRECIO</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
 </div>
 <script>
 // Redirigir si no está logueado
