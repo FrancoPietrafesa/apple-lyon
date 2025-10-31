@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Apple Lyon - Inventario</title>
+<style>
+body { font-family: Arial, sans-serif; background-color: #121212; color:#fff; }
+header { background-color: #1e1e1e; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+header h1 { margin: 0; font-size: 24px; }
+header nav a { color: #66bfff; margin-left: 15px; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { padding: 8px 12px; border: 1px solid #444; text-align: left; }
+thead { background-color: #1f1f1f; }
+tbody tr:nth-child(even) { background-color: #1b1b1b; }
+tbody tr:nth-child(odd) { background-color: #161616; }
+tr.selected { background-color: #333333 !important; }
+button { margin: 5px; padding: 8px 12px; background-color:#3a3a3a; color:#fff; border:none; border-radius:4px; cursor:pointer; }
+button:hover { background-color:#555; }
+#controls { margin-top: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Apple Lyon - Inventario</h1>
+  <nav>
+    <a href="charts.html">Graficos</a>
+    <a href="#" onclick="logout()">Cerrar sesión</a>
+  </nav>
+</header>
+<div style="padding: 20px;">
+  <table id="inventoryTable">
+    <thead>
+      <tr>
+        <th>MODELO</th>
+        <th>COLOR</th>
+        <th>BATERIA</th>
+        <th>PRECIO</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+  <div id="controls">
+    <button onclick="addItem()">Agregar</button>
+    <button onclick="editItem()">Editar</button>
+    <button onclick="deleteItem()">Borrar</button>
+  </div>
+</div>
+<script>
+if (localStorage.getItem('loggedIn') !== 'true') {
+  location.href = 'index.html';
+}
+
+var selectedRowIndex = null;
+
+function loadInventory() {
+  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+  var tbody = document.querySelector('#inventoryTable tbody');
+  tbody.innerHTML = '';
+  inventory.forEach((item, index) => {
+    var tr = document.createElement('tr');
+    tr.addEventListener('click', function() {
+      selectRow(index);
+    });
+    tr.innerHTML = '<td>'+item.model+'</td><td>'+item.color+'</td><td>'+item.battery+'</td><td>'+item.price.toFixed(2)+'</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function selectRow(index) {
+  selectedRowIndex = index;
+  var rows = document.querySelectorAll('#inventoryTable tbody tr');
+  rows.forEach((row, i) => {
+    row.className = (i === index) ? 'selected' : '';
+  });
+}
+
+function addItem() {
+  var model = prompt('Modelo:');
+  if (!model) return;
+  var color = prompt('Color:');
+  if (!color) return;
+  var battery = prompt('Batería (mAh):');
+  if (!battery) return;
+  var price = parseFloat(prompt('Precio (USD):'));
+  if (isNaN(price)) return;
+  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+  inventory.push({model:model, color:color, battery:battery, price:price});
+  localStorage.setItem('inventory', JSON.stringify(inventory));
+  loadInventory();
+}
+
+function editItem() {
+  if (selectedRowIndex === null) {
+    alert('Selecciona un ítem para editar.');
+    return;
+  }
+  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+  var item = inventory[selectedRowIndex];
+  var model = prompt('Modelo:', item.model);
+  if (!model) return;
+  var color = prompt('Color:', item.color);
+  if (!color) return;
+  var battery = prompt('Batería (mAh):', item.battery);
+  if (!battery) return;
+  var price = parseFloat(prompt('Precio (USD):', item.price));
+  if (isNaN(price)) return;
+  inventory[selectedRowIndex] = {model:model, color:color, battery:battery, price:price};
+  localStorage.setItem('inventory', JSON.stringify(inventory));
+  loadInventory();
+}
+
+function deleteItem() {
+  if (selectedRowIndex === null) {
+    alert('Selecciona un ítem para borrar.');
+    return;
+  }
+  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+  inventory.splice(selectedRowIndex, 1);
+  localStorage.setItem('inventory', JSON.stringify(inventory));
+  selectedRowIndex = null;
+  loadInventory();
+}
+
+function logout() {
+  localStorage.setItem('loggedIn', 'false');
+  location.href = 'index.html';
+}
+
+window.onload = loadInventory;
+</script>
+</body>
+</html>

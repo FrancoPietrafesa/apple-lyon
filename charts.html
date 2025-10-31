@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Apple Lyon - Graficos</title>
+<style>
+body { font-family: Arial, sans-serif; background-color: #121212; color:#fff; }
+header { background-color: #1e1e1e; padding: 10px; display:flex; justify-content: space-between; align-items:center; color:#fff; }
+header h1 { margin: 0; font-size: 24px; }
+header nav a { color: #66bfff; margin-left: 15px; text-decoration: none; }
+.container { padding: 20px; }
+canvas { margin-top: 20px; background-color:#1e1e1e; border-radius:8px; box-shadow:0 0 5px rgba(255,255,255,0.1); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Apple Lyon - Graficos</h1>
+  <nav>
+    <a href="landing.html">Inventario</a>
+  </nav>
+</header>
+<div class="container">
+  <h2>Cantidad de modelos</h2>
+  <canvas id="modelChart" width="400" height="200"></canvas>
+  <h2>Precio total de los vendidos</h2>
+  <canvas id="priceChart" width="400" height="200"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+if (localStorage.getItem('loggedIn') !== 'true') {
+  location.href = 'index.html';
+}
+
+function generateCharts() {
+  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+  var modelCounts = {};
+  inventory.forEach(item => {
+    modelCounts[item.model] = (modelCounts[item.model] || 0) + 1;
+  });
+  var modelLabels = Object.keys(modelCounts);
+  var countData = Object.values(modelCounts);
+
+  var ctx1 = document.getElementById('modelChart').getContext('2d');
+  new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: modelLabels,
+      datasets: [{
+        label: 'Cantidad',
+        data: countData,
+        backgroundColor: 'rgba(102, 191, 255, 0.6)',
+        borderColor: '#66bfff',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: 'white' }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: 'white' },
+          grid: { color: 'rgba(255,255,255,0.1)' }
+        },
+        y: {
+          ticks: { color: 'white' },
+          grid: { color: 'rgba(255,255,255,0.1)' }
+        }
+      }
+    }
+  });
+
+  var totalPrice = inventory.reduce((sum, item) => sum + item.price, 0);
+  var ctx2 = document.getElementById('priceChart').getContext('2d');
+  new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['Precio total'],
+      datasets: [{
+        label: 'Precio (USD)',
+        data: [totalPrice],
+        backgroundColor: 'rgba(102, 191, 255, 0.6)',
+        borderColor: '#66bfff',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: 'white' }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: 'white' },
+          grid: { color: 'rgba(255,255,255,0.1)' }
+        },
+        y: {
+          ticks: { color: 'white' },
+          grid: { color: 'rgba(255,255,255,0.1)' }
+        }
+      }
+    }
+  });
+}
+
+window.onload = generateCharts;
+</script>
+</body>
+</html>
