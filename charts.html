@@ -84,6 +84,17 @@ nav a:hover {
 h2 {
     margin-top: 30px;
 }
+/* Widget de cotización del dólar */
+#dolar-widget {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #1e1e1e;
+    border: 2px solid #6264A7;
+    border-radius: 8px;
+    display: inline-block;
+    font-size: 14px;
+    text-align: center;
+}
 @media (max-width: 600px) {
     header {
         flex-direction: column;
@@ -117,6 +128,9 @@ h2 {
   </nav>
 </header>
 <div class="container">
+  <!-- Widget de cotización del dólar -->
+  <div id="dolar-widget">Cotización del dólar cargando...</div>
+
   <h2>Cantidad de modelos</h2>
   <div class="chart-wrapper">
     <canvas id="modelChart"></canvas>
@@ -236,7 +250,35 @@ async function generateCharts() {
   }
 }
 
-window.onload = generateCharts;
+window.onload = function() {
+  generateCharts();
+  fetchDolarRates();
+};
+
+// Obtiene la cotización del dólar (oficial y blue) y actualiza el widget
+async function fetchDolarRates() {
+  var widget = document.getElementById('dolar-widget');
+  if (!widget) return;
+  try {
+    var response = await fetch('https://api.bluelytics.com.ar/v2/latest');
+    var data = await response.json();
+    if (data && data.oficial && data.blue) {
+      var oficialCompra = data.oficial.value_buy;
+      var oficialVenta = data.oficial.value_sell;
+      var blueCompra = data.blue.value_buy;
+      var blueVenta = data.blue.value_sell;
+      widget.innerHTML =
+        '<strong>Dólar Oficial:</strong> Compra ' + oficialCompra + ' | Venta ' + oficialVenta + '<br>' +
+        '<strong>Dólar Blue:</strong> Compra ' + blueCompra + ' | Venta ' + blueVenta + '<br>' +
+        '<small>Actualizado: ' + (data.last_update ? new Date(data.last_update).toLocaleString() : '') + '</small>';
+    } else {
+      widget.textContent = 'Cotización no disponible.';
+    }
+  } catch (err) {
+    console.error('Error al obtener cotización del dólar:', err);
+    widget.textContent = 'Cotización no disponible.';
+  }
+}
 </script>
 </body>
 </html>
