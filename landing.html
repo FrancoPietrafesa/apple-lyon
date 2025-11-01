@@ -203,13 +203,15 @@ if (localStorage.getItem('loggedIn') !== 'true') {
 var selectedRowIndex = null;
 
 // Configuración de Firebase (rellena con tus credenciales)
+// Configuración de Firebase para tu proyecto Apple Lyon
 var firebaseConfig = {
   apiKey: "AIzaSyCN3FgP5vBLuHbyf1VvXd5fmWJhECaVCdc",
   authDomain: "applelyon.firebaseapp.com",
   projectId: "applelyon",
   storageBucket: "applelyon.firebasestorage.app",
   messagingSenderId: "13580705131",
-  appId: "1:13580705131:web:fa3d0a52a2ee29150e402e"
+  appId: "1:13580705131:web:fa3d0a52a2ee29150e402e",
+  measurementId: "G-6F7QYXT3VG"
 };
 firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
