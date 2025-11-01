@@ -157,6 +157,9 @@ tr.selected { background-color: #333333 !important; }
     margin-right: auto;
 }
 </style>
+<!-- Firebase JS SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
 <header>
@@ -192,30 +195,56 @@ tr.selected { background-color: #333333 !important; }
   <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
 </div>
 <script>
-// Redirigir si no está logueado
+// Comprueba si el usuario está logueado; si no, redirige a la página de inicio de sesión
 if (localStorage.getItem('loggedIn') !== 'true') {
   location.href = 'index.html';
 }
 
 var selectedRowIndex = null;
 
-function loadInventory() {
-  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-  var tbody = document.querySelector('#inventoryTable tbody');
-  tbody.innerHTML = '';
-  inventory.forEach(function(item, index) {
-    var tr = document.createElement('tr');
-    tr.addEventListener('click', function() {
-      selectRow(index);
+// Configuración de Firebase (rellena con tus credenciales)
+var firebaseConfig = {
+  apiKey: "AIzaSyCN3FgP5vBLuHbyf1VvXd5fmWJhECaVCdc",
+  authDomain: "applelyon.firebaseapp.com",
+  projectId: "applelyon",
+  storageBucket: "applelyon.firebasestorage.app",
+  messagingSenderId: "13580705131",
+  appId: "1:13580705131:web:fa3d0a52a2ee29150e402e"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+// Almacena los elementos del inventario obtenidos de Firestore
+var inventoryData = [];
+
+// Carga los datos de Firestore y actualiza la tabla
+async function loadInventory() {
+  try {
+    var tbody = document.querySelector('#inventoryTable tbody');
+    tbody.innerHTML = '';
+    inventoryData = [];
+    var snapshot = await db.collection('inventory').get();
+    snapshot.forEach(function(docSnapshot) {
+      var data = docSnapshot.data();
+      inventoryData.push({ id: docSnapshot.id, model: data.model, color: data.color, battery: data.battery, price: data.price });
     });
-    tr.innerHTML = '<td>' + item.model + '</td>' +
-                  '<td>' + item.color + '</td>' +
-                  '<td>' + item.battery + '</td>' +
-                  '<td>' + item.price.toFixed(2) + '</td>';
-    tbody.appendChild(tr);
-  });
+    inventoryData.forEach(function(item, index) {
+      var tr = document.createElement('tr');
+      tr.addEventListener('click', function() {
+        selectRow(index);
+      });
+      var priceVal = (typeof item.price === 'number') ? item.price.toFixed(2) : item.price;
+      tr.innerHTML = '<td>' + (item.model || '') + '</td>' +
+                    '<td>' + (item.color || '') + '</td>' +
+                    '<td>' + (item.battery || '') + '</td>' +
+                    '<td>' + priceVal + '</td>';
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Error cargando inventario:', err);
+  }
 }
 
+// Selecciona una fila para editar o borrar
 function selectRow(index) {
   selectedRowIndex = index;
   var rows = document.querySelectorAll('#inventoryTable tbody tr');
@@ -224,7 +253,8 @@ function selectRow(index) {
   });
 }
 
-function addItem() {
+// Agrega un nuevo ítem a Firestore
+async function addItem() {
   var model = prompt('Modelo:');
   if (!model) return;
   var color = prompt('Color:');
@@ -233,19 +263,22 @@ function addItem() {
   if (!battery) return;
   var price = parseFloat(prompt('Precio (USD):'));
   if (isNaN(price)) return;
-  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-  inventory.push({model: model, color: color, battery: battery, price: price});
-  localStorage.setItem('inventory', JSON.stringify(inventory));
-  loadInventory();
+  try {
+    await db.collection('inventory').add({ model: model, color: color, battery: battery, price: price });
+    await loadInventory();
+  } catch (err) {
+    console.error('Error al agregar ítem:', err);
+  }
 }
 
-function editItem() {
+// Edita el ítem seleccionado en Firestore
+async function editItem() {
   if (selectedRowIndex === null) {
     alert('Selecciona un ítem para editar.');
     return;
   }
-  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-  var item = inventory[selectedRowIndex];
+  var item = inventoryData[selectedRowIndex];
+  if (!item) return;
   var model = prompt('Modelo:', item.model);
   if (!model) return;
   var color = prompt('Color:', item.color);
@@ -254,29 +287,38 @@ function editItem() {
   if (!battery) return;
   var price = parseFloat(prompt('Precio (USD):', item.price));
   if (isNaN(price)) return;
-  inventory[selectedRowIndex] = {model: model, color: color, battery: battery, price: price};
-  localStorage.setItem('inventory', JSON.stringify(inventory));
-  loadInventory();
+  try {
+    await db.collection('inventory').doc(item.id).set({ model: model, color: color, battery: battery, price: price });
+    await loadInventory();
+  } catch (err) {
+    console.error('Error al editar ítem:', err);
+  }
 }
 
-function deleteItem() {
+// Elimina el ítem seleccionado de Firestore
+async function deleteItem() {
   if (selectedRowIndex === null) {
     alert('Selecciona un ítem para borrar.');
     return;
   }
-  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-  inventory.splice(selectedRowIndex, 1);
-  localStorage.setItem('inventory', JSON.stringify(inventory));
-  selectedRowIndex = null;
-  loadInventory();
+  var item = inventoryData[selectedRowIndex];
+  if (!item) return;
+  try {
+    await db.collection('inventory').doc(item.id).delete();
+    selectedRowIndex = null;
+    await loadInventory();
+  } catch (err) {
+    console.error('Error al borrar ítem:', err);
+  }
 }
 
+// Cierra la sesión borrando la bandera de login
 function logout() {
   localStorage.setItem('loggedIn', 'false');
   location.href = 'index.html';
 }
 
-// Trigger file selection for CSV upload
+// Abre el selector de archivos para cargar CSV
 function loadCSV() {
   var input = document.getElementById('csvFileInput');
   if (input) {
@@ -285,7 +327,7 @@ function loadCSV() {
   }
 }
 
-// Listen for file selection and parse CSV
+// Maneja la selección del archivo CSV
 var csvInput = document.getElementById('csvFileInput');
 if (csvInput) {
   csvInput.addEventListener('change', function(event) {
@@ -300,13 +342,12 @@ if (csvInput) {
   });
 }
 
-// Parse CSV text and add entries to inventory
-function parseCSV(text) {
+// Analiza el CSV, elimina la colección existente y agrega nuevos documentos
+async function parseCSV(text) {
   if (!text) return;
   var lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return;
   var delimiter = ',';
-  // Detect delimiter based on first line (comma or semicolon)
   if (lines[0].indexOf(';') > -1 && lines[0].indexOf(',') === -1) {
     delimiter = ';';
   }
@@ -316,52 +357,67 @@ function parseCSV(text) {
   var batteryIdx = headers.indexOf('batería');
   if (batteryIdx < 0) batteryIdx = headers.indexOf('bateria');
   var priceIdx = headers.indexOf('precio');
-  // Al cargar un CSV se reemplaza completamente el inventario actual.
-  var inventory = [];
-  for (var i = 1; i < lines.length; i++) {
-    var row = lines[i];
-    if (!row) continue;
-    var parts = row.split(delimiter);
-    // Skip if row doesn't match header length
-    if (parts.length < headers.length) continue;
-    var model = modelIdx >= 0 ? parts[modelIdx].trim() : '';
-    if (!model) continue;
-    var color = colorIdx >= 0 ? parts[colorIdx].trim() : '';
-    var battery = batteryIdx >= 0 ? parts[batteryIdx].trim() : '';
-    var priceStr = priceIdx >= 0 ? parts[priceIdx].trim() : '';
-    // Replace comma decimal with dot
-    priceStr = priceStr.replace(/,/g, '.');
-    var price = parseFloat(priceStr);
-    inventory.push({ model: model, color: color, battery: battery, price: isNaN(price) ? 0 : price });
+  try {
+    // Borra la colección actual
+    var snapshot = await db.collection('inventory').get();
+    var deletePromises = [];
+    snapshot.forEach(function(docSnapshot) {
+      deletePromises.push(docSnapshot.ref.delete());
+    });
+    await Promise.all(deletePromises);
+    // Agrega los registros del CSV
+    var addPromises = [];
+    for (var i = 1; i < lines.length; i++) {
+      var row = lines[i];
+      if (!row) continue;
+      var parts = row.split(delimiter);
+      if (parts.length < headers.length) continue;
+      var model = modelIdx >= 0 ? parts[modelIdx].trim() : '';
+      if (!model) continue;
+      var color = colorIdx >= 0 ? parts[colorIdx].trim() : '';
+      var battery = batteryIdx >= 0 ? parts[batteryIdx].trim() : '';
+      var priceStr = priceIdx >= 0 ? parts[priceIdx].trim() : '';
+      priceStr = priceStr.replace(/,/g, '.');
+      var price = parseFloat(priceStr);
+      addPromises.push(db.collection('inventory').add({ model: model, color: color, battery: battery, price: isNaN(price) ? 0 : price }));
+    }
+    await Promise.all(addPromises);
+    selectedRowIndex = null;
+    await loadInventory();
+  } catch (err) {
+    console.error('Error al procesar CSV:', err);
   }
-  localStorage.setItem('inventory', JSON.stringify(inventory));
-  // Reiniciar la selección de fila y recargar tabla
-  selectedRowIndex = null;
+}
+
+// Exporta el inventario actual a un archivo CSV y lo descarga
+async function downloadCSV() {
+  try {
+    await loadInventory();
+    var lines = [];
+    lines.push('MODELO,COLOR,BATERÍA,PRECIO');
+    inventoryData.forEach(function(item) {
+      var priceVal = (typeof item.price === 'number') ? item.price.toString() : item.price;
+      lines.push([item.model, item.color, item.battery, priceVal].join(','));
+    });
+    var csvContent = lines.join('\n');
+    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'inventario.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Error al descargar CSV:', err);
+  }
+}
+
+// Carga el inventario al iniciar la página
+window.onload = function() {
   loadInventory();
-}
-
-// Generate and download CSV from current inventory
-function downloadCSV() {
-  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-  var lines = [];
-  lines.push('MODELO,COLOR,BATERÍA,PRECIO');
-  inventory.forEach(function(item) {
-    var priceVal = (typeof item.price === 'number') ? item.price.toString() : item.price;
-    lines.push([item.model, item.color, item.battery, priceVal].join(','));
-  });
-  var csvContent = lines.join('\n');
-  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  var url = URL.createObjectURL(blob);
-  var link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'inventario.csv');
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-window.onload = loadInventory;
+};
 </script>
 </body>
 </html>

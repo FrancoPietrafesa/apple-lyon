@@ -126,82 +126,112 @@ h2 {
     <canvas id="priceChart"></canvas>
   </div>
 </div>
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Firebase JS SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 <script>
 // Redirección si no está logueado
 if (localStorage.getItem('loggedIn') !== 'true') {
   location.href = 'index.html';
 }
 
-function generateCharts() {
-  var inventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-  var modelCounts = {};
-  var priceByModel = {};
-  inventory.forEach(function(item) {
-    modelCounts[item.model] = (modelCounts[item.model] || 0) + 1;
-    priceByModel[item.model] = (priceByModel[item.model] || 0) + item.price;
-  });
-  var modelLabels = Object.keys(modelCounts);
-  var countData = Object.values(modelCounts);
-  var colors = modelLabels.map(function(label, index) {
-    var hue = Math.floor((index / modelLabels.length) * 360);
-    return 'hsl(' + hue + ', 70%, 50%)';
-  });
+// Configuración de Firebase (rellena con tus credenciales)
+var firebaseConfig = {
+  apiKey: "AIzaSyCN3FgP5vBLuHbyf1VvXd5fmWJhECaVCdc",
+  authDomain: "applelyon.firebaseapp.com",
+  projectId: "applelyon",
+  storageBucket: "applelyon.firebasestorage.app",
+  messagingSenderId: "13580705131",
+  appId: "1:13580705131:web:fa3d0a52a2ee29150e402e"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
 
-  var ctx1 = document.getElementById('modelChart').getContext('2d');
-  new Chart(ctx1, {
-    type: 'pie',
-    data: {
-      labels: modelLabels,
-      datasets: [{
-        label: 'Cantidad',
-        data: countData,
-        backgroundColor: colors,
-        borderColor: '#121212',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          labels: { color: 'white' }
+async function generateCharts() {
+  try {
+    var modelCounts = {};
+    var priceByModel = {};
+    var snapshot = await db.collection('inventory').get();
+    snapshot.forEach(function(docSnapshot) {
+      var data = docSnapshot.data();
+      var model = data.model;
+      // Convertir a número por si viene como string
+      var price = parseFloat(data.price);
+      if (!isNaN(price)) {
+        priceByModel[model] = (priceByModel[model] || 0) + price;
+      } else {
+        priceByModel[model] = (priceByModel[model] || 0);
+      }
+      modelCounts[model] = (modelCounts[model] || 0) + 1;
+    });
+    // Construir datos para los gráficos
+    var modelLabels = Object.keys(modelCounts);
+    var countData = modelLabels.map(function(model) { return modelCounts[model]; });
+    var priceLabels = Object.keys(priceByModel);
+    var priceData = priceLabels.map(function(model) { return priceByModel[model]; });
+    // Generar colores dinámicamente
+    function generateColors(length) {
+      var arr = [];
+      for (var i = 0; i < length; i++) {
+        var hue = Math.floor((i / length) * 360);
+        arr.push('hsl(' + hue + ', 70%, 50%)');
+      }
+      return arr;
+    }
+    var colorsForCount = generateColors(modelLabels.length);
+    var colorsForPrice = generateColors(priceLabels.length);
+    // Graficos
+    var ctx1 = document.getElementById('modelChart').getContext('2d');
+    new Chart(ctx1, {
+      type: 'pie',
+      data: {
+        labels: modelLabels,
+        datasets: [{
+          label: 'Cantidad',
+          data: countData,
+          backgroundColor: colorsForCount,
+          borderColor: '#121212',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: 'white' }
+          }
         }
       }
-    }
-  });
-
-  var priceLabels = Object.keys(priceByModel);
-  var priceData = Object.values(priceByModel);
-  var priceColors = priceLabels.map(function(label, index) {
-    var hue = Math.floor((index / priceLabels.length) * 360);
-    return 'hsl(' + hue + ', 70%, 50%)';
-  });
-
-  var ctx2 = document.getElementById('priceChart').getContext('2d');
-  new Chart(ctx2, {
-    type: 'pie',
-    data: {
-      labels: priceLabels,
-      datasets: [{
-        label: 'Precio total (USD)',
-        data: priceData,
-        backgroundColor: priceColors,
-        borderColor: '#121212',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          labels: { color: 'white' }
+    });
+    var ctx2 = document.getElementById('priceChart').getContext('2d');
+    new Chart(ctx2, {
+      type: 'pie',
+      data: {
+        labels: priceLabels,
+        datasets: [{
+          label: 'Precio total (USD)',
+          data: priceData,
+          backgroundColor: colorsForPrice,
+          borderColor: '#121212',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: 'white' }
+          }
         }
       }
-    }
-  });
+    });
+  } catch (err) {
+    console.error('Error generando gráficos:', err);
+  }
 }
 
 window.onload = generateCharts;
